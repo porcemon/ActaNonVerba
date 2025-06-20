@@ -1,0 +1,16 @@
+name: Check TwinCAT Version
+
+on: [push]
+
+jobs:
+  check-version:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run TwinCAT version script
+        shell: pwsh
+        run: |
+          ./scripts/get_twincat_version.ps1 -ProjectFile "MyProject.tsproj"
