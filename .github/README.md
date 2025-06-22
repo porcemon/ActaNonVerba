@@ -44,6 +44,8 @@ ${yourRepo}/.github/workflows/monoActa.yaml
 
 ## ![Workflow File Location](docs/pics/monoActaLocation.png)
 
+---
+
 ### step 3:
 
 Edit the `config.json` file to define the checks you want to perform on your TwinCAT `.tsproj` file.
@@ -55,6 +57,8 @@ The `.tsproj` file is an XML-like file. You can configure which tags and attribu
 - If `CopyTmcToTarget` is enabled
 
 ## ![Config File Location](docs/pics/configLocation.png)
+
+---
 
 ### step 4:
 
