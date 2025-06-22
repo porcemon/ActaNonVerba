@@ -1,0 +1,99 @@
+name: Check TwinCAT Version (Split Jobs)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  searching_for_tsproj:
+    runs-on: windows-latest
+
+    outputs:
+      projectPath: ${{ steps.find_tsproj.outputs.projectPath }}
+
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+
+      - name: Find .tsproj file
+        id: find_tsproj
+        shell: pwsh
+        run: |
+          $proj = Get-ChildItem -Recurse -Filter *.tsproj | Select-Object -First 1
+          if (-not $proj) {
+            Write-Error "No .tsproj file found."
+            exit 1
+          }
+          echo "projectPath=$($proj.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+  fetching_script:
+    runs-on: windows-latest
+    needs: searching_for_tsproj
+
+    outputs:
+      scriptPath: ${{ steps.upload.outputs.scriptPath }}
+
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+
+      - name: Download PowerShell script
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://raw.githubusercontent.com/porcemon/ActaNonVerba/refs/heads/main/.github/workflows/findXmlModuleWithAttribute.ps1" `
+            -OutFile "findXmlModuleWithAttribute.ps1"
+
+      - name: Upload script artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-script
+          path: findXmlModuleWithAttribute.ps1
+
+
+
+  import_config:
+    runs-on: windows-latest
+    needs: fetching_script
+
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Read JSON and set matrix output
+        id: set-matrix
+        shell: pwsh
+        run: |
+          $json = Get-Content ".github/workflows/config.json" -Raw | ConvertFrom-Json
+          $matrix = @{ include = $json.include } | ConvertTo-Json -Compress
+          echo "matrix=$matrix" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+  validating_project:
+    runs-on: windows-latest
+    needs: [fetching_script, searching_for_tsproj, import_config]
+
+    strategy:
+      matrix: ${{ fromJson(needs.import_config.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download script artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: check-script
+
+      - name: Run ${{ matrix.description }}
+        shell: pwsh
+        run: |
+          & ./findXmlModuleWithAttribute.ps1 `
+            -File "${{ needs.searching_for_tsproj.outputs.projectPath }}" `
+            -Tag "${{ matrix.tag }}" `
+            -Attribute "${{ matrix.attribute }}" `
+            -Value "${{ matrix.value }}"

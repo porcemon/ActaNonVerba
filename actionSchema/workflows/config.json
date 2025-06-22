@@ -1,0 +1,22 @@
+{
+  "include": [
+    {
+      "description": "Version number",
+      "tag": "TcSmProject",
+      "attribute": "TcVersion",
+      "value": "3.1.4024.65"
+    },
+    {
+      "description": "Version pin",
+      "tag": "TcSmProject",
+      "attribute": "TcVersionFixed",
+      "value": "true"
+    },
+    {
+      "description": "TMC file transfer",
+      "tag": "Project",
+      "attribute": "CopyTmcToTarget",
+      "value": "true"
+    }
+  ]
+}
